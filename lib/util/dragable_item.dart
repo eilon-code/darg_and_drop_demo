@@ -5,24 +5,19 @@ import 'package:provider/provider.dart';
 
 class DraggableItem extends StatelessWidget {
   final DraggedItem item;
-  final GlobalKey itemKey;
   final void Function()? onRemove;
 
   const DraggableItem({
     super.key,
     required this.item,
-    required this.itemKey,
     this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
     final DragManager dragManager = context.watch<DragManager>();
-    if (item.isItemShadow()) {
-      return item.child;
-    }
     return Draggable<DraggableItem>(
-      key: itemKey,
+      key: key,
       maxSimultaneousDrags: 1,
       data: this,
       feedback: ConstrainedBox(
@@ -31,12 +26,13 @@ class DraggableItem extends StatelessWidget {
           maxWidth: 700, // Limits width to 700
         ),
         child: Material(
+          color: Colors.transparent, // Ensure no white background
           child: item.child,
         ),
       ),
       onDragStarted: () {
         print("ItemStartDrag");
-        dragManager.startDrag(this, item.parentList);
+        dragManager.startDrag(this);
       },
       onDragEnd: (details) {
         print("ItemEndDrag");
@@ -50,7 +46,6 @@ class DraggableItem extends StatelessWidget {
         print("ItemDragCompleted");
         dragManager.endDrag(false);
       },
-      // childWhenDragging: const SizedBox.shrink(),
       child: item.child,
     );
   }
