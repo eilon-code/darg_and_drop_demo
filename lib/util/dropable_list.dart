@@ -1,5 +1,6 @@
 import 'package:darg_and_drop_demo/util/drag_manager.dart';
 import 'package:darg_and_drop_demo/util/dragable_item.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -135,11 +136,11 @@ class DropList extends StatefulWidget {
 }
 
 class _DropListState extends State<DropList> {
+  final List<Widget> _children = [];
+
   // Finds the closest index where the shadow should be placed
   double _smoothIndex = 0;
   int? _lastIndex;
-
-  List<Widget> children = [];
 
   int _findInsertIndex(Offset dragPosition) {
     if (widget.items.isEmpty) {
@@ -149,8 +150,8 @@ class _DropListState extends State<DropList> {
     double relativeY = dragPosition.dy;
     double minDistance = double.infinity;
     int resultIndex = 0;
-    for (int i = 0; i < children.length; i++) {
-      final Widget currentItem = children[i];
+    for (int i = 0; i < _children.length; i++) {
+      final Widget currentItem = _children[i];
       final GlobalKey? key = currentItem.key as GlobalKey?;
       final RenderBox? itemBox = key?.currentContext?.findRenderObject() as RenderBox?;
       if (itemBox == null) continue;
@@ -177,14 +178,14 @@ class _DropListState extends State<DropList> {
   @override
   Widget build(BuildContext context) {
     final DragManager dragManager = context.watch<DragManager>();
-    children.clear();
+    _children.clear();
     bool shadowList = widget.isShadow == true;
     for (DraggedItem item in widget.items) {
       bool shadowItem = dragManager.isDraggedItem(item);
       if (shadowList || shadowItem) {
-        children.add(item.shadow);
+        _children.add(item.shadow);
       } else {
-        children.add(
+        _children.add(
           DraggableItem(
             item: item,
             onRemove: () {
@@ -197,10 +198,12 @@ class _DropListState extends State<DropList> {
         );
       }
     }
-    print("ShadowList: ${shadowList}");
+    if (kDebugMode) {
+      print("ShadowList: $shadowList");
+    }
     if (shadowList) {
       return Column(
-        children: widget.items.isNotEmpty ? children : [
+        children: _children.isNotEmpty ? _children : [
           const SizedBox(
             width: 70,
             height: 30,
@@ -214,27 +217,37 @@ class _DropListState extends State<DropList> {
     }
     return DragTarget<DraggableItem>(
       onWillAcceptWithDetails: (item) {
-        print("ListUpdateShadow");
+        if (kDebugMode) {
+          print("ListUpdateShadow");
+        }
         int index = _findInsertIndex(item.offset);
         dragManager.updateShadow(widget, index);
         return true;
       },
       onMove: (details) {
-        print("ListUpdateShadow");
+        if (kDebugMode) {
+          print("ListUpdateShadow");
+        }
         int index = _findInsertIndex(details.offset);
         dragManager.updateShadow(widget, index);
       },
       onLeave: (_) {
-        print("ListRemoveShadow");
-        dragManager.removeShadow(widget);
+        if (kDebugMode) {
+          print("ListRemoveShadow");
+        }
+        setState(() {
+          dragManager.removeShadow(widget);
+        });
       },
       onAcceptWithDetails: (item) {
-        print("ListEndDrag");
+        if (kDebugMode) {
+          print("ListEndDrag");
+        }
         dragManager.endDrag(true); // Successfully dropped
       },
       builder: (context, candidateData, rejectedData) {
         return Column(
-          children: widget.items.isNotEmpty ? children : [
+          children: _children.isNotEmpty ? _children : [
             const SizedBox(
               width: 70,
               height: 30,
